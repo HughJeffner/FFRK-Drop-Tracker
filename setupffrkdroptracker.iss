@@ -1,6 +1,6 @@
 #include <idp.iss> 
 #define MyAppName "FFRK Drop Tracker"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.7.1"
 #define MyAppPublisher "BaconCatBug"
 #define MyAppURL "https://www.reddit.com/r/FFRecordKeeper/comments/6vhyod/ffrk_drop_tracker_export_your_entire_inventory/"
 
@@ -23,8 +23,8 @@ OutputBaseFilename=setupffrkdroptracker_v{#MyAppVersion}
 SetupIconFile=icon.ico
 Compression=lzma
 SolidCompression=yes
-AppCopyright=u/baconcatbug 2017
-VersionInfoVersion=1.7.0
+AppCopyright=u/baconcatbug 2018
+VersionInfoVersion=1.7.1
 UninstallDisplayIcon={app}\icon.ico
 
 [Languages]
