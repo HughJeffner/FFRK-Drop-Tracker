@@ -3,10 +3,16 @@ import time
 import re
 import configparser
 
-
 def response(flow):
-    if len(re.findall('/get_battle_init_data', flow.request.path)) == 0:
-        return
+
+    if len(re.findall('/get_battle_init_data', flow.request.path)) != 0:
+        parse_init_data(flow)
+
+    if len(re.findall('/win_battle', flow.request.path)) != 0:
+        parse_win_battle(flow)
+
+
+def parse_init_data(flow):
 
     data   = json.loads(flow.response.content.decode('utf-8-sig'))
     rounds = data['battle']['rounds']
@@ -63,7 +69,7 @@ def response(flow):
 
         multi_segment = True
 
-        print('Drops:\n')
+        print('Drops:')
 
         for drop in sorted(results['drops']):
             if (drop in drop_ids.keys()):
@@ -79,6 +85,12 @@ def response(flow):
 
             print('{0}{1}'.format(name, amount))
 
+            # Log to file if enabled
+            if (config.getboolean('options', 'log_drops')):
+                droptime = time.strftime("%Y-%m-%d %H:%M:%S")
+                with open('log_drops.csv','a') as fd:
+                    fd.write('{0},{1},{2},{3},{4}\n'.format(droptime, data['battle']['battle_id'], data['battle']['dungeon']['dungeon_id'], name, results['drops'][drop]['amount']))
+
     if len(results['potions']):
         potion_types = {
             '21': 'Blue Potion',
@@ -93,7 +105,7 @@ def response(flow):
 
         multi_segment = True
 
-        print('Potions:\n')
+        print('Potions:')
 
         for potion in results['potions']:
             print('Round {0}: {1}'.format(potion['round'], potion_types[potion['type']]))
@@ -104,16 +116,58 @@ def response(flow):
 
         multi_segment = True
 
-        print('Record Materias:\n')
+        print('Record Materias:')
 
         for materia in results['materias']:
             print(materia)
 
-    print('\n\n')
+    print('\n')
     
     get_EXP_RM_Boosts(data)
 
+def parse_win_battle(flow):
+
+    # Parse json data
+    data = json.loads(flow.response.content.decode('utf-8-sig'))
+
+    # Check results
+    if not 'single_prize_item_id_to_num' in data['result']:
+        return
+    results = data['result']['single_prize_item_id_to_num']
     
+    # Load config options
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    log = config.getboolean('options', 'log_battle_bonus')
+
+    # Only if battle bonus present
+    if len(results):
+
+        print('Battle Bonus:')
+
+        # Open item database
+        with open('ffrk_drop_tracker_db.csv') as f:
+            lines    = f.read().splitlines()[1:]
+            drop_ids = {x.split(',')[0]: x.split(',')[1] for x in lines}
+
+        # For each entry
+        for key, value in results.items():
+
+            # Get a copy of the id, and if it is gil then remap the item id to 0
+            item_id = key
+            if item_id == '92000000':
+                item_id = '0'
+                
+            # Print the result
+            print('{0} : {1}'.format(drop_ids[item_id], value))
+            
+            # If log enabled then append to it
+            if (log):
+                with open('log_battle_bonus.csv','a') as fd:
+                    fd.write('{0},{1},{2},{3}\n'.format(time.strftime("%Y-%m-%d %H:%M:%S"), data['result']['dungeon_id'], drop_ids[item_id], value))
+
+        print('\n')
+
 def get_EXP_RM_Boosts(data):
     
     results = []
